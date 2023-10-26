@@ -1,5 +1,6 @@
 from datetime import datetime
 from abc import ABC, abstractmethod
+import warnings
 from models.Customer import Customer
 import mysql.connector
 
@@ -101,9 +102,31 @@ class Staff(ABC):
         self.password = password
 
     def createPatient(self, customer):
+        success = False
         #print(first_name, ' ', last_name, ' ', DOB.month, "/", DOB.day, "/", DOB.year, ' ',address, ' ',phone, ' ',email, ' ',insurance, sep= '')
-        mycursor.execute("INSERT INTO Customer (lastName, firstName, DOB, Address, phoneNum, email, insurance) VALUES (%s, %s, %s, %s, %s, %s, %s)", (customer.last_name, customer.first_name, customer.date_of_birth, customer.address, customer.phone, customer.email, customer.insurance))
-        mydb.commit()
+        try:
+            mycursor.execute("INSERT INTO Customer (lastName, firstName, DOB, Address, phoneNum, email, insurance) VALUES (%s, %s, %s, %s, %s, %s, %s)", (customer.last_name, customer.first_name, customer.date_of_birth, customer.address, customer.phone, customer.email, customer.insurance))
+            mydb.commit()
+            success = True
+        except:
+            success = False 
+        return success
+
+    def fetchCustomer(self):
+        try:                 #SELECT * FROM PMS.Customer where Customer_ID = 3
+            mycursor.execute("SELECT * FROM Customer where Customer_ID = %s", 3)
+        except:
+            print("failed to get customer")
+        customerInfo =  mycursor.fetchall()
+        return customerInfo
+    
+    def fetchID(self, customer):
+        try:                 #SELECT Customer_ID FROM PMS.Customer where firstName = 'conor' and lastName = 'toole'
+            mycursor.execute("SELECT Customer_ID FROM Customer where firstName = %s and lastName = %s", (customer.first_name, customer.last_name))
+            customerInfo = mycursor.fetchone()
+            return str(customerInfo[0])
+        except:
+            print("failed to get id")
 
     def loadCustomer(self):
         customer1 = Customer()
@@ -117,35 +140,35 @@ class Staff(ABC):
         customer1.insurance = input("Enter insurance information:")
         return customer1
 
-    def UpdateCustomer(self):
-        customerID=input("Enter Customer ID\n")
-        toUpdate = input("What would you like to update? (First, Last, DOB, Address, Phone, Email, Insurance)\n")
+    def UpdateCustomer(self, customer, iD):
+        # customerID=input("Enter Customer ID\n")
+        # toUpdate = input("What would you like to update? (First, Last, DOB, Address, Phone, Email, Insurance)\n")
 
-        if toUpdate == "First" or toUpdate =="first":
-            newInfo = input("What is the updated First Name?")
-            command = "UPDATE Customer set firstName = %s where Customer_ID = %s"
-        elif toUpdate == "Last" or toUpdate =="last":
-            newInfo = input("What is the updated Last Name?")
-            command = "UPDATE Customer set lastName = %s where Customer_ID = %s"
-        elif toUpdate == "DOB" or toUpdate =="dob":
-            newInfo = input("What is the updated DOB?")
-            command = "UPDATE Customer set DOB = %s where Customer_ID = %s"
-        elif toUpdate == "Address" or toUpdate == "address":
-            newInfo = input("What is the updated Address?")
-            command = "UPDATE Customer set Address = %s where Customer_ID = %s"
-        elif toUpdate == "Phone" or toUpdate =="phone":
-            newInfo = input("What is the updated Phone Number?")
-            command = "UPDATE Customer set phoneNumber = %s where Customer_ID = %s"
-        elif toUpdate == "Email" or toUpdate == "email":
-            newInfo = input("What is the updated Email?")
-            command = "UPDATE Customer set email = %s where Customer_ID = %s"
-        elif toUpdate == "Insurance" or toUpdate == "insurance":
-            newInfo = input("What is the Insurance?")
-            command = "UPDATE Customer set insurance = %s where Customer_ID = %s"
-        else:
-            print("Invalid Input")
-            
-        mycursor.execute(command,(newInfo,customerID))
+        # if toUpdate == "First" or toUpdate =="first":
+        #     newInfo = input("What is the updated First Name?")
+        #     command = "UPDATE Customer set firstName = %s where Customer_ID = %s"
+        # elif toUpdate == "Last" or toUpdate =="last":
+        #     newInfo = input("What is the updated Last Name?")
+        #     command = "UPDATE Customer set lastName = %s where Customer_ID = %s"
+        # elif toUpdate == "DOB" or toUpdate =="dob":
+        #     newInfo = input("What is the updated DOB?")
+        #     command = "UPDATE Customer set DOB = %s where Customer_ID = %s"
+        # elif toUpdate == "Address" or toUpdate == "address":
+        #     newInfo = input("What is the updated Address?")
+        #     command = "UPDATE Customer set Address = %s where Customer_ID = %s"
+        # elif toUpdate == "Phone" or toUpdate =="phone":
+        #     newInfo = input("What is the updated Phone Number?")
+        #     command = "UPDATE Customer set phoneNumber = %s where Customer_ID = %s"
+        # elif toUpdate == "Email" or toUpdate == "email":
+        #     newInfo = input("What is the updated Email?")
+        #     command = "UPDATE Customer set email = %s where Customer_ID = %s"
+        # elif toUpdate == "Insurance" or toUpdate == "insurance":
+        #     newInfo = input("What is the Insurance?")
+        #     command = "UPDATE Customer set insurance = %s where Customer_ID = %s"
+        # else:
+        #     print("Invalid Input")
+        
+        mycursor.execute("UPDATE Customer set %s where Customer_ID = %s",(customer, iD))
         mydb.commit()
 
     def enterPrescription(self):
@@ -213,10 +236,12 @@ class PharmacyManager(Staff):
         mycursor.execute("INSERT INTO PMS_Staff (role, name, password) VALUES (%s, %s, %s)", (role, name, password))
         mydb.commit()
 
-    def removePatient(self):
-        firstName = input("Patient first name\n")
-        lastName = input("Patient last name\n")
-        mycursor.execute(("DELETE FROM Customer WHERE firstName = %s and lastName = %s"),(firstName,lastName))
+    def removePatient(self, CustomerID):
+        try:
+            mycursor.execute("DELETE FROM Customer WHERE Customer_ID = %s",(CustomerID))
+            mydb.commit()
+        except:
+            print("Failed to delete customer")
 
     def recoverStaffAccount(self):
         pass
